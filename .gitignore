@@ -1,0 +1,18 @@
+# Distribution
+dist
+out
+build
+node_modules
+.idea
+
+# Logs
+*.log*
+logs
+log
+
+# Environment
+*.env
+
+# Misc
+.DS_Store
+tsconfig.tsbuildinfo
