@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { logger } from "./log.js";
 import domainRouter from "./routes/domain.routes.js";
-import { config } from "./config/index.js";
+import { config } from "./config/config.js";
 
 const app = express();
 
