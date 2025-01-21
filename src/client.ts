@@ -1,5 +1,15 @@
-import { concat, createPublicClient, hexToBytes, http, keccak256, nonceManager, PublicClient, toBytes } from "viem";
-import { base, optimism, optimismSepolia } from "viem/chains";
+import {
+    concat,
+    createPublicClient,
+    hexToBytes,
+    http,
+    keccak256,
+    nonceManager,
+    padHex,
+    PublicClient,
+    toBytes, toHex,
+} from "viem";
+import { base, optimism, optimismSepolia, localhost } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 import { logger } from "./log.js";
 import { config } from "./config/config.js";
@@ -18,6 +28,9 @@ export class Client {
             case "base":
                 chain = base;
                 break;
+            case "local":
+                chain = localhost;
+            break;
             default:
                 chain = optimismSepolia;
         }
@@ -41,11 +54,13 @@ export class Client {
      * @returns True if the nonce has been used, false otherwise
      */
     async checkUsedNonce(nonce: bigint) {
+        const hexValue = toHex(nonce);
+        const byte32Value = padHex(hexValue, { size: 32 });
         const result = await this.publicClient.readContract({
             address: config.registryAddress as `0x${string}`,
             abi: registryAbi,
             functionName: "usedNonces",
-            args: [nonce],
+            args: [byte32Value],
         });
 
         logger.info(`checkUsedNonce: ${result}`);
@@ -64,11 +79,13 @@ export class Client {
         owner: `0x${string}`,
         deadline: bigint,
         nonce: bigint) {
+        const nonceHex = toHex(nonce);
+        const bytes32Nonce = padHex(nonceHex, { size: 32 });
         const result = await this.publicClient.readContract({
             address: config.registryAddress as `0x${string}`,
             abi: registryAbi,
             functionName: "getStructHash",
-            args: [config.rootDomainAddress, label, owner, deadline, nonce],
+            args: [config.rootDomainAddress, label, owner, deadline, bytes32Nonce],
         });
 
         logger.info(`getStructHash: ${result}`);

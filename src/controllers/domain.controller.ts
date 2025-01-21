@@ -3,7 +3,7 @@ import { Client } from "../client.js";
 import { config } from "../config/config.js";
 import { logger } from "../log.js";
 
-const mock = true;
+const mock = false;
 let currentNonce = 0n;
 export const signOperator = async (req: Request, res: Response) => {
     const { domain, expiration, owner } = req.body;
