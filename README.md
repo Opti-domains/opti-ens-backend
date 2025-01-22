@@ -1,11 +1,11 @@
-# <h1 align="center"> Farcaster Challenge </h1>
+# <h1 align="center"> Singular Backend </h1>
 
-# <p align="center">Challenge service will get submitted proof from contract and then verify. If have any invalid proof, challenger will call challenge to contract and get reward</p>
+# <p align="center">This service use to provider signature of operator.</p>
 
 ## How to use
 ```shell
-git clone https://github.com/johnyupnode/simple-ai.git
-cd farcaster-challenge
+git clone https://github.com/phanhoc/singular-be.git
+cd singular-be
 pnpm install
 pnpm build
 pnpm start
@@ -16,8 +16,11 @@ pnpm start
 cp .env.example .env
 ```
 After that, you need to fill in the environment variables in the `.env` file
-- `NETWORK` - Network of blockchain that you want to connect to
-- `RPC_URL` - RPC URL of blockchain that you want to connect to
-- `PRIVATE_KEY` - Private key of the account that you want to use to interact with the contract
-- `WALLET_VERIFIER_ADDRESS` - Address of the verifier wallet contract. That use to query event submit proof and call challenge
-- `MAX_BEHIND_BLOCKS` - The maximum number of blocks that the service can be behind the current block
+- `PORT` - Port of server (default: 5100)
+- `NETWORK` - Network of blockchain (default: localhost)
+- `CHAIN_ID` - Chain id of blockchain (default: 31337)
+- `RPC_URL` - RPC url of blockchain (default: http://localhost:8545)
+- `REGISTRY_ADDRESS` - Address of registry contract (default: 0x)
+- `ROOT_DOMAIN_ADDRESS` - Address of root domain contract (default: 0x)
+- `OPERATOR_KEY` - Private key of operator use to sign transaction (default: 0x)
+- `DEADLINE` - Deadline of signature example for 1h: 1737516606
