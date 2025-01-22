@@ -1,15 +1,10 @@
 import {
-    concat,
-    createPublicClient,
-    hexToBytes,
-    http,
-    keccak256,
+    createPublicClient, http,
     nonceManager,
-    padHex,
-    PublicClient,
-    toBytes, toHex,
+    padHex, PublicClient,
+    toHex,
 } from "viem";
-import { base, optimism, optimismSepolia, localhost } from "viem/chains";
+import { base, localhost, optimism, optimismSepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 import { logger } from "./log.js";
 import { config } from "./config/config.js";
@@ -30,7 +25,7 @@ export class Client {
                 break;
             case "local":
                 chain = localhost;
-            break;
+                break;
             default:
                 chain = optimismSepolia;
         }
@@ -123,20 +118,45 @@ export class Client {
         nonce: bigint,
     ) {
         const account = privateKeyToAccount(config.operatorKey as `0x${string}`, { nonceManager });
-        const structHash = await this.getStructHash(label, owner, deadline, nonce);
-        const domainSeparator = await this.getDomainSeparator();
-        const digest = keccak256(
-            concat([
-                toBytes("\x19\x01"), // EIP-712 prefix
-                hexToBytes(domainSeparator as `0x${string}`), // Domain separator from contract
-                hexToBytes(structHash as `0x${string}`), // Struct hash
-            ])
-        );
-        const signature = await account.signMessage({ message: digest });
-        const r = signature.slice(0, 66) as `0x${string}`; // first 32 bytes
-        const s = '0x' + signature.slice(66, 130) as `0x${string}`; // second 32 bytes
-        const v = parseInt(signature.slice(130, 132), 16); // last byte as integer
+        logger.info(`signOperator-nonce: ${nonce}`);
+        // EIP-712 domain data
+        const domain = {
+            name: "OptiPermissionedRegistry",
+            version: "1.0.0",
+            chainId: config.chainId,
+            verifyingContract: config.registryAddress,
+        };
 
-        return concat([r, s, `0x${v.toString(16).padStart(2, '0')}`]);
+        // EIP-712 types
+        const types = {
+            Register: [
+                { name: "domain", type: "address" },
+                { name: "label", type: "string" },
+                { name: "owner", type: "address" },
+                { name: "deadline", type: "uint256" },
+                { name: "nonce", type: "bytes32" },
+            ],
+        };
+
+        // EIP-712 message
+        const nonceHex = toHex(nonce);
+        const bytes32Nonce = padHex(nonceHex, { size: 32 });
+        const message = {
+            domain: config.rootDomainAddress,
+            label: label,
+            owner: owner,
+            deadline: deadline,
+            nonce: bytes32Nonce,
+        };
+        // Sign the typed data
+        const signature = await account.signTypedData({
+            domain,
+            types,
+            primaryType: "Register",
+            message,
+        });
+
+        logger.info(`Signature:  ${signature}`);
+        return signature;
     }
 }
