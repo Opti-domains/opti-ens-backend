@@ -9,6 +9,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { logger } from "./log.js";
 import { config } from "./config/config.js";
 import { registryAbi } from "./abi/registry.abi.js";
+import { domainAbi } from "./abi/domain.abi.js";
 
 export class Client {
     private static instance: Client;
@@ -101,6 +102,23 @@ export class Client {
 
         logger.info(`getDomainSeparator: ${result}`);
         return result;
+    }
+
+    /**
+     * Check if the domain separator has been used
+     * @param domainSeparator the domain separator to check
+     * @returns address of the domain if it has been used, 0x0 otherwise
+     */
+    async checkUsedDomainSeparator(domainSeparator: string) {
+        const result = await this.publicClient.readContract({
+            address: config.rootDomainAddress as `0x${string}`,
+            abi: domainAbi,
+            functionName: "subdomains",
+            args: [domainSeparator],
+        });
+
+        logger.info(`checkUsedDomainSeparator: ${result}`);
+        return result as string;
     }
 
     /**

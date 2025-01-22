@@ -5,6 +5,7 @@ import { logger } from "../log.js";
 
 const mock = false;
 let currentNonce = 0n;
+const client = Client.getInstance();
 export const signOperator = async (req: Request, res: Response) => {
     const { domain, expiration, owner } = req.body;
     if (!domain || !expiration || !owner) {
@@ -16,8 +17,13 @@ export const signOperator = async (req: Request, res: Response) => {
         res.json({ signature: "0xdeadbeef", nonce: currentNonce.toString(), deadline: config.deadline.toString() });
         return;
     }
+    // Check if the domain is already registered
+    const addrDomain = await client.checkUsedDomainSeparator(domain);
+    if (addrDomain.toLowerCase() !== "0x0000000000000000000000000000000000000000".toLowerCase()) {
+        res.status(400).json({ message: `Domain ${domain} is registered` });
+        return;
+    }
 
-    const client = Client.getInstance();
     let nextNonce = currentNonce + 1n;
     let used = await client.checkUsedNonce(nextNonce)
     while (used) {
