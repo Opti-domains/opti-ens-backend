@@ -16,3 +16,4 @@ log
 # Misc
 .DS_Store
 tsconfig.tsbuildinfo
+singular.db
