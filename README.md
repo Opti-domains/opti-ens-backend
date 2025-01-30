@@ -23,4 +23,4 @@ After that, you need to fill in the environment variables in the `.env` file
 - `REGISTRY_ADDRESS` - Address of registry contract (default: 0x)
 - `ROOT_DOMAIN_ADDRESS` - Address of root domain contract (default: 0x)
 - `OPERATOR_KEY` - Private key of operator use to sign transaction (default: 0x)
-- `DEADLINE` - Deadline of signature example for 1h: 1737516606
+- `DEADLINE` - Deadline of signature example for 1h: 3600

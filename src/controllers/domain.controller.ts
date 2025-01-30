@@ -12,12 +12,20 @@ const addrZero = "0x0000000000000000000000000000000000000000";
 export const signOperator = async (req: Request, res: Response) => {
     const { domain, expiration, owner } = req.body;
     if (!domain || !expiration || !owner) {
-        res.status(400).json({ message: "Domain, owner and expiration are required" });
+        res.status(400).json({
+            message: "Domain, owner and expiration are required",
+        });
         return;
     }
-    logger.info(`Signing operator for domain ${domain} with expiration ${expiration} and owner ${owner}`);
+    logger.info(
+        `Signing operator for domain ${domain} with expiration ${expiration} and owner ${owner}`,
+    );
     if (mock) {
-        res.json({ signature: "0xdeadbeef", nonce: currentNonce.toString(), deadline: config.deadline.toString() });
+        res.json({
+            signature: "0xdeadbeef",
+            nonce: currentNonce.toString(),
+            deadline: config.deadline.toString(),
+        });
         return;
     }
     // Check if the domain is already registered
@@ -35,12 +43,28 @@ export const signOperator = async (req: Request, res: Response) => {
     }
     currentNonce = nextNonce;
 
-    const encodeSignature = await client.signOperator(domain, owner, config.deadline, nextNonce);
+    const encodeSignature = await client.signOperator(
+        domain,
+        owner,
+        BigInt(Math.floor(Date.now() / 1000)) + config.deadline,
+        nextNonce,
+    );
 
-    db.insertDomainInformation(domain, expiration, encodeSignature, Number(nextNonce), Number(config.deadline), owner, "signed");
+    db.insertDomainInformation(
+        domain,
+        expiration,
+        encodeSignature,
+        Number(nextNonce),
+        Number(config.deadline),
+        owner,
+        "signed",
+    );
 
-
-    res.json({ signature: encodeSignature, nonce: nextNonce.toString(), deadline: config.deadline.toString() });
+    res.json({
+        signature: encodeSignature,
+        nonce: nextNonce.toString(),
+        deadline: config.deadline.toString(),
+    });
 };
 
 export const checkDomain = async (req: Request, res: Response) => {
@@ -56,7 +80,9 @@ export const checkDomain = async (req: Request, res: Response) => {
         for (let i = 0; i < domainList.length; i++) {
             const domain = domainList[i];
             if (domain.status === "signed") {
-                const optDomain = await client.checkUsedDomainSeparator(domain.label);
+                const optDomain = await client.checkUsedDomainSeparator(
+                    domain.label,
+                );
                 if (optDomain.toLowerCase() !== addrZero.toLowerCase()) {
                     db.updateDomainInformation(domain.label, "claimed");
                     domain.status = "claimed";
@@ -68,7 +94,6 @@ export const checkDomain = async (req: Request, res: Response) => {
         logger.info("Checking domains", result);
 
         res.json(result);
-
     } catch (err) {
         logger.error("Error checking domain", err);
         res.status(500).json({ message: "Internal server error" });
