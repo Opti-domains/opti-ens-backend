@@ -10,6 +10,7 @@ const client = Client.getInstance();
 const db = new DB();
 const addrZero = "0x0000000000000000000000000000000000000000";
 export const signOperator = async (req: Request, res: Response) => {
+    try {
     const { domain, expiration, owner } = req.body;
     if (!domain || !expiration || !owner) {
         res.status(400).json({
@@ -34,6 +35,16 @@ export const signOperator = async (req: Request, res: Response) => {
         res.status(400).json({ message: `Domain ${domain} is registered` });
         return;
     }
+    // Check if the domain is already signed
+    const domainInfo = db.getDomainInformation(domain);
+    if (domainInfo && domainInfo.status === "signed") {
+        res.json({
+            signature: domainInfo.signature,
+            nonce: domainInfo.nonce,
+            deadline: domainInfo.deadline,
+        });
+        return;
+    }
 
     let nextNonce = currentNonce + 1n;
     let used = await client.checkUsedNonce(nextNonce);
@@ -42,11 +53,12 @@ export const signOperator = async (req: Request, res: Response) => {
         used = await client.checkUsedNonce(nextNonce);
     }
     currentNonce = nextNonce;
+    const calculateExpiration = BigInt(Math.floor(Date.now() / 1000)) + config.deadline;
 
     const encodeSignature = await client.signOperator(
         domain,
         owner,
-        BigInt(Math.floor(Date.now() / 1000)) + config.deadline,
+        calculateExpiration,
         nextNonce,
     );
 
@@ -55,7 +67,7 @@ export const signOperator = async (req: Request, res: Response) => {
         expiration,
         encodeSignature,
         Number(nextNonce),
-        Number(config.deadline),
+        Number(calculateExpiration),
         owner,
         "signed",
     );
@@ -63,8 +75,12 @@ export const signOperator = async (req: Request, res: Response) => {
     res.json({
         signature: encodeSignature,
         nonce: nextNonce.toString(),
-        deadline: config.deadline.toString(),
+        deadline: calculateExpiration.toString(),
     });
+    } catch (err) {
+        logger.error(`Error signing operator: ${err}`);
+        res.status(500).json({ message: "Internal server error" });
+    }
 };
 
 export const checkDomain = async (req: Request, res: Response) => {
