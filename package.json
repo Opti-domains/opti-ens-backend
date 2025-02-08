@@ -3,6 +3,7 @@
     "version": "1.0.0",
     "description": "Singular Backend that serves as the API expose as operator",
     "main": "index.js",
+    "type": "module",
     "scripts": {
         "test": "echo \\\"Error: no src/test specified\\\" && exit 1",
         "build": "rm -rf build && tsc --build",
