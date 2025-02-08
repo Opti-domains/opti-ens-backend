@@ -23,13 +23,29 @@ export class DB {
         `);
     }
 
-    insertDomainInformation(label: string, expireDate: string, signature: string, nonce: number, deadline: number, owner: string, status: string) {
+    insertDomainInformation(
+        label: string,
+        expireDate: string,
+        signature: string,
+        nonce: number,
+        deadline: number,
+        owner: string,
+        status: string,
+    ) {
         const stmt = this.db.prepare(`
             INSERT INTO domain_information (label, expireDate, signature, nonce, deadline, owner, status)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         `);
 
-        return stmt.run(label, expireDate, signature, nonce, deadline, owner, status);
+        return stmt.run(
+            label,
+            expireDate,
+            signature,
+            nonce,
+            deadline,
+            owner,
+            status,
+        );
     }
 
     getDomainInformation(label: string) {
@@ -62,5 +78,4 @@ export class DB {
 
         return stmt.all(...labels);
     }
-
 }
