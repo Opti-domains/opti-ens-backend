@@ -45,7 +45,7 @@ export const signOperator = async (req: Request, res: Response) => {
             return;
         }
 
-        let nextNonce = BigInt(Math.floor(Math.random() * 1000000000000000000));
+        let nextNonce = BigInt(Math.floor(Math.random() * 1000000000));
         let used = await client.checkUsedNonce(nextNonce);
         while (used) {
             nextNonce++;
