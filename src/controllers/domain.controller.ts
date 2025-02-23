@@ -8,12 +8,65 @@ const mock = false;
 const client = Client.getInstance();
 const db = new DB();
 const addrZero = "0x0000000000000000000000000000000000000000";
+
+export const checkEnsOwner = async (domain: string, owner: string) => {
+    const query = `
+        query GetDomainOwner($domain: String!) {
+            domains(where: {name: $domain}) {
+                owner {
+                    id
+                }
+            }
+            wrappedDomains(where: {name: $domain}) {
+                owner {
+                    id
+                }
+            }
+        }
+    `;
+
+    try {
+        const response = await fetch(config.graphUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                query,
+                variables: { domain },
+            }),
+        });
+
+        const data = await response.json();
+
+        // Check ownership in either unwrapped or wrapped domains
+        const unwrappedOwner = data.data?.domains[0]?.owner?.id;
+        const wrappedOwner = data.data?.wrappedDomains[0]?.owner?.id;
+
+        return (
+            (unwrappedOwner &&
+                unwrappedOwner.toLowerCase() === owner.toLowerCase()) ||
+            (wrappedOwner && wrappedOwner.toLowerCase() === owner.toLowerCase())
+        );
+    } catch (error) {
+        logger.error(`Error checking ENS owner: ${error}`);
+        return false;
+    }
+};
+
 export const signOperator = async (req: Request, res: Response) => {
     try {
         const { domain, expiration, owner } = req.body;
         if (!domain || !expiration || !owner) {
             res.status(400).json({
                 message: "Domain, owner and expiration are required",
+            });
+            return;
+        }
+        const isOwner = await checkEnsOwner(domain, owner);
+        if (!isOwner) {
+            res.status(400).json({
+                message: `Domain ${domain} is not owned by ${owner}`,
             });
             return;
         }
