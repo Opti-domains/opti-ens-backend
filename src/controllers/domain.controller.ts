@@ -90,12 +90,14 @@ export const signOperator = async (req: Request, res: Response) => {
         // Check if the domain is already signed
         const domainInfo = db.getDomainInformation(domain);
         if (domainInfo && domainInfo.status === "signed") {
-            res.json({
-                signature: domainInfo.signature,
-                nonce: domainInfo.nonce,
-                deadline: domainInfo.deadline,
-            });
-            return;
+            if (Date.now() + 600000 < domainInfo.deadline * 1000) {
+                res.json({
+                    signature: domainInfo.signature,
+                    nonce: domainInfo.nonce,
+                    deadline: domainInfo.deadline,
+                });
+                return;
+            }
         }
 
         let nextNonce = BigInt(Math.floor(Math.random() * 1000000000));
