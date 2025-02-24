@@ -33,11 +33,13 @@ export const checkEnsOwner = async (domain: string, owner: string) => {
             },
             body: JSON.stringify({
                 query,
-                variables: { domain },
+                variables: { domain: domain + '.eth' },
             }),
         });
 
         const data = await response.json();
+
+        console.log(data, domain)
 
         // Check ownership in either unwrapped or wrapped domains
         const unwrappedOwner = data.data?.domains[0]?.owner?.id;
@@ -78,6 +80,9 @@ export const signOperator = async (req: Request, res: Response) => {
                 signature: "0xdeadbeef",
                 nonce: "0",
                 deadline: config.deadline.toString(),
+                domain,
+                owner,
+                expiration,
             });
             return;
         }
@@ -95,6 +100,9 @@ export const signOperator = async (req: Request, res: Response) => {
                     signature: domainInfo.signature,
                     nonce: domainInfo.nonce,
                     deadline: domainInfo.deadline,
+                    domain,
+                    owner,
+                    expiration,
                 });
                 return;
             }
@@ -130,6 +138,9 @@ export const signOperator = async (req: Request, res: Response) => {
             signature: encodeSignature,
             nonce: nextNonce.toString(),
             deadline: calculateExpiration.toString(),
+            domain,
+            owner,
+            expiration,
         });
     } catch (err) {
         logger.error(`Error signing operator: ${err}`);
@@ -166,6 +177,70 @@ export const checkDomain = async (req: Request, res: Response) => {
         res.json(result);
     } catch (err) {
         logger.error("Error checking domain", err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+export const listDomainsByOwner = async (req: Request, res: Response) => {
+    try {
+        const { owner } = req.params;
+        if (!owner) {
+            res.status(400).json({ message: "Owner address is required" });
+            return;
+        }
+
+        const query = `
+            query GetDomainsByOwner($owner: String!) {
+                domains(where: {owner: $owner}) {
+                    name
+                    owner {
+                        id
+                    }
+                    expiryDate
+                }
+                wrappedDomains(where: {owner: $owner}) {
+                    name
+                    owner {
+                        id
+                    }
+                    expiryDate
+                }
+            }
+        `;
+
+        const response = await fetch(config.graphUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                query,
+                variables: { owner: owner.toLowerCase() },
+            }),
+        });
+
+        const data = await response.json();
+
+        // Combine and format the results
+        const domains = [
+            ...(data.data?.domains || []).map((d: any) => ({
+                name: d.name,
+                owner: d.owner.id as `0x${string}`,
+                ...(d.expiryDate ? { expiration: d.expiryDate } : {})
+            })),
+            ...(data.data?.wrappedDomains || []).map((d: any) => ({
+                name: d.name,
+                owner: d.owner.id as `0x${string}`,
+                ...(d.expiryDate ? { expiration: d.expiryDate } : {})
+            }))
+        ].filter(d => {
+            const parts = d.name.split('.');
+            return parts.length === 2 && parts[1] === 'eth';
+        });
+
+        res.json(domains);
+    } catch (err) {
+        logger.error(`Error listing domains by owner: ${err}`);
         res.status(500).json({ message: "Internal server error" });
     }
 };
