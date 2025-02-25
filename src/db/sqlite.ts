@@ -4,7 +4,7 @@ export class DB {
     private db: any;
 
     constructor() {
-        this.db = new Database("singular.db");
+        this.db = new Database(process.env["DB_PATH"] || "singular.db");
 
         this.db.exec(`
             CREATE TABLE IF NOT EXISTS domain_information

@@ -16,4 +16,7 @@ log
 # Misc
 .DS_Store
 tsconfig.tsbuildinfo
+
+# DB
 singular.db
+singular-sepolia.db
